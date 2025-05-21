@@ -15,6 +15,17 @@ function enableDevMode() {
     let areaStartX = 0, areaStartY = 0;
     let areaWidth = 0, areaHeight = 0;
     
+    // 버튼 시각화 초기화 (v키 눌림 효과)
+    if (!document.body.classList.contains('dev-mode')) {
+        console.log('개발자 모드에서 버튼 시각화 활성화');
+        document.body.classList.add('dev-mode');
+        
+        // 버튼 시각화 적용
+        if (typeof window.toggleButtonVisibility === 'function') {
+            window.toggleButtonVisibility(true);
+        }
+    }
+    
     // 기존 개발자 패널이 있으면 제거
     const existingPanel = document.querySelector('.dev-panel');
     if (existingPanel) {
@@ -275,6 +286,12 @@ function enableDevMode() {
         
         // 개발자 모드 UI 제거
         devPanel.remove();
+        
+        // 버튼 시각화 끄기
+        document.body.classList.remove('dev-mode');
+        if (typeof window.toggleButtonVisibility === 'function') {
+            window.toggleButtonVisibility(false);
+        }
         
         console.log('개발자 모드가 종료되었습니다.');
     });

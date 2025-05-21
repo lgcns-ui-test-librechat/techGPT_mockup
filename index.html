@@ -40,18 +40,30 @@
                 const currentNum = window.getCurrentScreenNum();
                 window.goToScreen(currentNum - 1);
             } 
-            // 버튼 시각화 토글 (v키)
-            else if (e.key === 'v') {
+            // 버튼 시각화 토글 ('v'키)
+            else if (e.key === 'v' || e.key === 'V') {
+                console.log("'v' 키가 눌렸습니다");
+                
+                // body에 dev-mode 클래스 토글
                 document.body.classList.toggle('dev-mode');
                 const isVisible = document.body.classList.contains('dev-mode');
-                console.log(isVisible ? '버튼 영역 표시' : '버튼 영역 숨김');
                 
-                // 버튼 시각화 직접 토글
+                // 현재 상태 로깅
+                console.log(`버튼 시각화 토글: ${isVisible ? '표시' : '숨김'} 모드로 변경`);
+                
+                // toggleButtonVisibility 함수 호출 (전역 함수로 노출됨)
                 if (typeof window.toggleButtonVisibility === 'function') {
-                    window.toggleButtonVisibility(isVisible);
+                    try {
+                        window.toggleButtonVisibility(isVisible);
+                        console.log("토글 함수 호출 성공");
+                    } catch (err) {
+                        console.error("토글 함수 호출 중 오류 발생:", err);
+                    }
+                } else {
+                    console.error("toggleButtonVisibility 함수를 찾을 수 없습니다.");
                 }
                 
-                // 버튼 시각화 즉시 업데이트
+                // updateButtons 함수 호출
                 if (typeof window.updateButtons === 'function') {
                     window.updateButtons();
                 }
@@ -70,6 +82,12 @@
                 window.updateButtons();
             }
         });
+        
+        // v 키에 대한 문서 메시지 추가
+        console.log('단축키 안내:');
+        console.log('1. ← / → 화살표 - 이전/다음 화면으로 이동');
+        console.log('2. v - 버튼 영역 표시/숨김 토글');
+        console.log('3. Ctrl+Y - 개발자 모드 활성화');
         
         // 개발 도구용 콘솔 명령어
         console.log('개발자 콘솔 명령어:');

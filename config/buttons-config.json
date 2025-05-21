@@ -38,11 +38,11 @@
     },
     "alert2": {
       "id": "btn-alert2",
-      "x": 2493,
-      "y": 141,
-      "width": 75,
-      "height": 57,
-      "targetScreen": 5,
+      "x": 2320,
+      "y": 80,
+      "width": 180,
+      "height": 60,
+      "targetScreen": 1,
       "useLeftTopPosition": true
     },
     "rightArrow": {
@@ -62,21 +62,20 @@
       "height": 350,
       "targetScreen": 14,
       "useLeftTopPosition": true
+    },
+    "goToHome1": {
+      "id": "btn-go-to-home1",
+      "x": 0,
+      "y": 1435,
+      "width": 75,
+      "height": 57,
+      "targetScreen": 5,
+      "useLeftTopPosition": true
     }
+
   },
   "screenMappings": {
-    "4": [
-      {
-        "id": "btn-4-next",
-        "x": 1249,
-        "y": 720,
-        "width": 200,
-        "height": 100,
-        "targetScreen": 5,
-        "useLeftTopPosition": true
-      }
-    ],
-    "14": [
+    "14":[
       {
         "id": "btn-14-6669",
         "x": 670,
@@ -91,28 +90,28 @@
   "buttonRanges": [
     {
       "buttonId": "home",
-      "startScreen": 1,
+      "startScreen": 4,
       "endScreen": 17
     },
     {
       "buttonId": "chat",
-      "startScreen": 1,
+      "startScreen": 4,
       "endScreen": 17
     },
     {
       "buttonId": "search",
-      "startScreen": 1,
+      "startScreen": 4,
       "endScreen": 17
     },
     {
       "buttonId": "alert",
-      "startScreen": 1,
+      "startScreen": 4,
       "endScreen": 17
     },
     {
       "buttonId": "alert2",
-      "startScreen": 1,
-      "endScreen": 17
+      "startScreen": 4,
+      "endScreen": 16
     },
     {
       "buttonId": "rightArrow",
@@ -123,6 +122,11 @@
       "buttonId": "leftArrow",
       "startScreen": 4,
       "endScreen": 16
+    },
+    {
+      "buttonId": "goToHome1",
+      "startScreen": 1,
+      "endScreen": 3
     }
   ]
 } 

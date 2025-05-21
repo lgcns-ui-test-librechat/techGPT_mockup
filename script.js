@@ -307,28 +307,49 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 특정 요소의 시각화 토글 헬퍼 함수
     function toggleElementVisibility(element, isVisible) {
+        // 기존 스타일 저장 (위치와 크기 정보)
+        const origLeft = element.style.left;
+        const origTop = element.style.top;
+        const origWidth = element.style.width;
+        const origHeight = element.style.height;
+        
         if (isVisible) {
-            element.style.backgroundColor = 'rgba(255, 0, 0, 0.3) !important';
-            element.style.border = '2px dashed red !important';
-            element.style.zIndex = '1000 !important';
+            // 데이터 속성으로 표시 상태 설정 (CSS 선택자를 위해)
             element.setAttribute('data-visible', 'true');
             
-            // !important가 적용되지 않을 수 있으므로 인라인 스타일 직접 설정
-            element.setAttribute('style', 
-                `position: absolute; 
-                left: ${element.style.left}; 
-                top: ${element.style.top}; 
-                width: ${element.style.width}; 
-                height: ${element.style.height}; 
-                background-color: rgba(255, 0, 0, 0.3) !important; 
-                border: 2px dashed red !important; 
-                z-index: 1000 !important;`
-            );
+            // 인라인 스타일로 시각화 설정 (CSS보다 우선 적용됨)
+            element.style.cssText = `
+                position: absolute;
+                left: ${origLeft};
+                top: ${origTop};
+                width: ${origWidth};
+                height: ${origHeight};
+                background-color: rgba(255, 0, 0, 0.3);
+                border: 2px dashed red;
+                z-index: 1000;
+                cursor: pointer;
+                pointer-events: auto;
+            `;
+            
+            // 디버깅 확인
+            console.log(`버튼 표시: ${element.id}, 위치: ${origLeft}, ${origTop}`);
         } else {
-            element.style.backgroundColor = 'transparent';
-            element.style.border = 'none';
-            element.style.zIndex = '100';
+            // 표시 상태 제거
             element.removeAttribute('data-visible');
+            
+            // 인라인 스타일로 투명/기본 상태로 복원
+            element.style.cssText = `
+                position: absolute;
+                left: ${origLeft};
+                top: ${origTop};
+                width: ${origWidth};
+                height: ${origHeight};
+                background-color: transparent;
+                border: none;
+                z-index: 100;
+                cursor: pointer;
+                pointer-events: auto;
+            `;
         }
     }
     
@@ -342,10 +363,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        console.log(`'v' 키 눌림: ${isVisible ? '버튼 표시' : '버튼 숨김'} 모드, 버튼 개수: ${areas.length}`);
+        
+        // 모든 버튼에 대해 시각화 토글 적용
         areas.forEach(area => {
             toggleElementVisibility(area, isVisible);
         });
         
+        // 디버깅용 정보 표시
         console.log(`${areas.length}개 버튼 영역 ${isVisible ? '표시됨' : '숨김'}`);
     }
     
