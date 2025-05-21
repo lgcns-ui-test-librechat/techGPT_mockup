@@ -44,10 +44,10 @@ document.addEventListener('DOMContentLoaded', function() {
         currentScreen.style.aspectRatio = `${aspectRatio}`;
         
         // 스크린 인디케이터 추가
-        const screenIndicator = document.createElement('div');
-        screenIndicator.className = 'screen-indicator';
-        screenIndicator.textContent = `${currentScreenNum} / ${totalScreens}`;
-        document.body.appendChild(screenIndicator);
+        // const screenIndicator = document.createElement('div');
+        // screenIndicator.className = 'screen-indicator';
+        // screenIndicator.textContent = `${currentScreenNum} / ${totalScreens}`;
+        // document.body.appendChild(screenIndicator);
         
         // 창 크기에 맞게 이미지 컨테이너 조정
         adjustContainerScale();
@@ -199,10 +199,10 @@ document.addEventListener('DOMContentLoaded', function() {
         currentScreen.src = `screenshot/${screenNum}.PNG`;
         
         // 인디케이터 업데이트
-        const screenIndicator = document.querySelector('.screen-indicator');
-        if (screenIndicator) {
-            screenIndicator.textContent = `${screenNum} / ${totalScreens}`;
-        }
+        // const screenIndicator = document.querySelector('.screen-indicator');
+        // if (screenIndicator) {
+        //     screenIndicator.textContent = `${screenNum} / ${totalScreens}`;
+        // }
     }
     
     // 컨테이너 스케일 조정 함수
