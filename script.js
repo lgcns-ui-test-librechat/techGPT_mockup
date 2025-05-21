@@ -129,17 +129,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // 컨테이너 스케일 먼저 조정
             adjustContainerScale();
             
-            // 약간의 지연 후 버튼 오버레이 업데이트
-            setTimeout(function() {
-                updateButtonOverlay();
-                
-                // 디버깅용 정보 출력
-                const rect = currentScreen.getBoundingClientRect();
-                console.log(`이미지 실제 크기: ${rect.width}x${rect.height}`);
-                
-                const containerRect = screenContainer.getBoundingClientRect();
-                console.log(`컨테이너 크기: ${containerRect.width}x${containerRect.height}`);
-            }, 100);
+            // 버튼 오버레이 즉시 업데이트 (setTimeout 제거)
+            updateButtonOverlay();
+            
+            // 디버깅용 정보 출력
+            const rect = currentScreen.getBoundingClientRect();
+            console.log(`이미지 실제 크기: ${rect.width}x${rect.height}`);
+            
+            const containerRect = screenContainer.getBoundingClientRect();
+            console.log(`컨테이너 크기: ${containerRect.width}x${containerRect.height}`);
         });
         
         // 윈도우 크기 변경 시 컨테이너 스케일 조정
@@ -190,6 +188,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (screenNum < 1 || screenNum > totalScreens) return;
         
         console.log(`화면 ${currentScreenNum}에서 ${screenNum}으로 이동합니다.`);
+        
+        // 즉시 기존 버튼 제거 (화면 전환 전)
+        buttonOverlay.innerHTML = '';
+        buttonOverlay.style.width = '0';
+        buttonOverlay.style.height = '0';
+        
+        // 화면 번호와 이미지 업데이트
         currentScreenNum = screenNum;
         currentScreen.src = `screenshot/${screenNum}.PNG`;
         
@@ -229,41 +234,64 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateButtonOverlay() {
         if (!config) return;
         
-        // 기존 버튼들 제거
+        // 처리 시작 기록
+        const startTime = performance.now();
+        
+        // 기존 버튼들 즉시 제거
         buttonOverlay.innerHTML = '';
         
-        // 버튼 오버레이 크기를 이미지에 맞게 조정
-        buttonOverlay.style.width = screenContainer.style.width;
-        buttonOverlay.style.height = screenContainer.style.height;
-        
-        // 현재 화면에 맞는 클릭 영역 생성
+        // 현재 화면에 매핑된 버튼 데이터 가져오기
         const mappings = window.screenMappings[currentScreenNum] || [];
-        console.log(`화면 ${currentScreenNum}에 ${mappings.length}개의 버튼을 생성합니다.`);
+        
+        // 버튼이 없으면 빠르게 종료
+        if (mappings.length === 0) {
+            console.log(`화면 ${currentScreenNum}에 버튼이 없습니다.`);
+            return;
+        }
+        
+        // 버튼 오버레이 크기를 이미지에 맞게 조정
+        const containerRect = screenContainer.getBoundingClientRect();
+        buttonOverlay.style.width = `${containerRect.width}px`;
+        buttonOverlay.style.height = `${containerRect.height}px`;
         
         // 개발 모드 상태 확인
         const isDevMode = document.body.classList.contains('dev-mode');
         
+        // 성능 최적화를 위한 DocumentFragment 사용
+        const fragment = document.createDocumentFragment();
+        
         // 현재 이미지의 실제 치수 가져오기
         const imgRect = currentScreen.getBoundingClientRect();
         
+        // 모든 버튼 영역 생성 및 속성 설정
         mappings.forEach(mapping => {
             const area = document.createElement('div');
             area.id = mapping.id;
             area.className = 'clickable-area';
             
-            // 원본 이미지 기준 픽셀 위치를 현재 스케일에 맞게 조정
-            let left, top, width, height;
-            
-            // 좌표가 유효한지 확인
+            // 좌표 확인 - 매우 작은 값(1 이하)은 유효하지 않은 것으로 간주
+            // x, y는 0이 유효할 수 있으므로 NaN만 체크
             const validX = !isNaN(mapping.x) ? mapping.x : 0;
             const validY = !isNaN(mapping.y) ? mapping.y : 0;
-            const validWidth = !isNaN(mapping.width) && mapping.width > 0 ? mapping.width : 75;
-            const validHeight = !isNaN(mapping.height) && mapping.height > 0 ? mapping.height : 57;
+            
+            // width, height는 반드시 1보다 커야 함
+            // 0 또는 음수일 경우에만 기본값 적용
+            const validWidth = (!isNaN(mapping.width) && mapping.width > 0) ? mapping.width : 75;
+            const validHeight = (!isNaN(mapping.height) && mapping.height > 0) ? mapping.height : 57;
+            
+            // 디버깅 - 기본값이 적용되는지 확인
+            if (mapping.width <= 0 || isNaN(mapping.width) || mapping.height <= 0 || isNaN(mapping.height)) {
+                console.warn(`버튼 '${mapping.id}'에 기본 크기가 적용됨 - 원본 값:`, 
+                    {x: mapping.x, y: mapping.y, width: mapping.width, height: mapping.height},
+                    '적용된 값:', {x: validX, y: validY, width: validWidth, height: validHeight});
+            }
             
             // 현재 스케일에 맞게 크기 조정
-            width = validWidth * scaleRatio;
-            height = validHeight * scaleRatio;
+            const width = validWidth * scaleRatio;
+            const height = validHeight * scaleRatio;
             
+            // 위치 계산
+            let left, top;
             if (mapping.useLeftTopPosition) {
                 // 왼쪽 상단 기준 좌표
                 left = validX * scaleRatio;
@@ -275,103 +303,109 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // 절대 위치 설정 (픽셀 단위)
-            area.style.position = 'absolute';
-            area.style.left = `${left}px`;
-            area.style.top = `${top}px`;
-            area.style.width = `${width}px`;
-            area.style.height = `${height}px`;
+            area.style.cssText = `
+                position: absolute;
+                left: ${left}px;
+                top: ${top}px;
+                width: ${width}px;
+                height: ${height}px;
+                z-index: 100;
+                cursor: pointer;
+                pointer-events: auto;
+                ${isDevMode ? 'background-color: rgba(255, 0, 0, 0.3); border: 2px dashed red;' : 'background-color: transparent; border: none;'}
+            `;
             
-            // 디버깅용 정보 저장
-            area.dataset.debug = `${mapping.id}: x=${validX}, y=${validY}, w=${validWidth}, h=${validHeight}`;
+            // 디버깅용 정보 저장 (원본 좌표 유지)
             area.dataset.originalCoords = JSON.stringify({x: validX, y: validY, width: validWidth, height: validHeight});
-            
-            // 개발 모드 시각화 적용 (v키 눌렀을 때)
-            if (isDevMode) {
-                toggleElementVisibility(area, true);
-            }
             
             // 클릭 이벤트 연결
             area.addEventListener('click', function(e) {
-                console.log(`${mapping.id} 버튼이 클릭되었습니다.`);
-                console.log(`버튼 정보: x=${validX}, y=${validY}, width=${validWidth}, height=${validHeight}`);
                 e.preventDefault();
                 e.stopPropagation();  // 이벤트 버블링 방지
                 mapping.action();
             });
             
-            buttonOverlay.appendChild(area);
+            // DocumentFragment에 추가 (DOM에 바로 추가하지 않음)
+            fragment.appendChild(area);
         });
         
-        console.log(`오버레이 조정 완료: 스케일 = ${scaleRatio}, 이미지 크기 = ${Math.round(imgRect.width)}×${Math.round(imgRect.height)}px`);
+        // 한 번에 DOM에 추가 (성능 최적화)
+        buttonOverlay.appendChild(fragment);
+        
+        // 처리 시간 측정
+        const endTime = performance.now();
+        console.log(`버튼 오버레이 업데이트 완료: ${mappings.length}개 버튼, ${Math.round(endTime - startTime)}ms 소요`);
     }
     
-    // 특정 요소의 시각화 토글 헬퍼 함수
+    // 특정 요소의 시각화 토글 헬퍼 함수 (최적화 버전)
     function toggleElementVisibility(element, isVisible) {
-        // 기존 스타일 저장 (위치와 크기 정보)
-        const origLeft = element.style.left;
-        const origTop = element.style.top;
-        const origWidth = element.style.width;
-        const origHeight = element.style.height;
+        if (!element) return;
         
+        // 기존 위치와 크기 정보 유지
+        const left = element.style.left;
+        const top = element.style.top;
+        const width = element.style.width;
+        const height = element.style.height;
+        
+        // 데이터 속성 설정 (CSS 선택자를 위해)
         if (isVisible) {
-            // 데이터 속성으로 표시 상태 설정 (CSS 선택자를 위해)
             element.setAttribute('data-visible', 'true');
-            
-            // 인라인 스타일로 시각화 설정 (CSS보다 우선 적용됨)
-            element.style.cssText = `
-                position: absolute;
-                left: ${origLeft};
-                top: ${origTop};
-                width: ${origWidth};
-                height: ${origHeight};
-                background-color: rgba(255, 0, 0, 0.3);
-                border: 2px dashed red;
-                z-index: 1000;
-                cursor: pointer;
-                pointer-events: auto;
-            `;
-            
-            // 디버깅 확인
-            console.log(`버튼 표시: ${element.id}, 위치: ${origLeft}, ${origTop}`);
         } else {
-            // 표시 상태 제거
             element.removeAttribute('data-visible');
-            
-            // 인라인 스타일로 투명/기본 상태로 복원
-            element.style.cssText = `
-                position: absolute;
-                left: ${origLeft};
-                top: ${origTop};
-                width: ${origWidth};
-                height: ${origHeight};
-                background-color: transparent;
-                border: none;
-                z-index: 100;
-                cursor: pointer;
-                pointer-events: auto;
-            `;
         }
+        
+        // 인라인 스타일 한 번에 적용 (reflow 최소화)
+        element.style.cssText = `
+            position: absolute;
+            left: ${left};
+            top: ${top};
+            width: ${width};
+            height: ${height};
+            background-color: ${isVisible ? 'rgba(255, 0, 0, 0.3)' : 'transparent'};
+            border: ${isVisible ? '2px dashed red' : 'none'};
+            z-index: ${isVisible ? '1000' : '100'};
+            cursor: pointer;
+            pointer-events: auto;
+        `;
     }
     
-    // 버튼 시각화 토글 함수 추가
+    // 버튼 시각화 토글 함수 (최적화 버전)
     function toggleButtonVisibility(isVisible) {
-        // 현재 생성된 모든 버튼에 대해 시각화 처리
+        // 가능한 빠르게 처리하기 위해 현재 생성된 모든 버튼 선택
         const areas = document.querySelectorAll('.clickable-area');
+        if (areas.length === 0) return;
         
-        if (areas.length === 0) {
-            console.log('표시할 버튼이 없습니다. 현재 화면: ' + currentScreenNum);
-            return;
-        }
-        
-        console.log(`'v' 키 눌림: ${isVisible ? '버튼 표시' : '버튼 숨김'} 모드, 버튼 개수: ${areas.length}`);
-        
-        // 모든 버튼에 대해 시각화 토글 적용
+        // 모든 버튼 스타일 일괄 업데이트 (성능 최적화)
         areas.forEach(area => {
-            toggleElementVisibility(area, isVisible);
+            // 현재 위치와 크기 정보
+            const left = area.style.left;
+            const top = area.style.top;
+            const width = area.style.width;
+            const height = area.style.height;
+            
+            // CSS 클래스 전환 대신 인라인 스타일 직접 적용 (더 빠름)
+            area.style.cssText = `
+                position: absolute;
+                left: ${left};
+                top: ${top};
+                width: ${width};
+                height: ${height};
+                background-color: ${isVisible ? 'rgba(255, 0, 0, 0.3) !important' : 'transparent'};
+                border: ${isVisible ? '2px dashed red !important' : 'none'};
+                z-index: ${isVisible ? '1000' : '100'};
+                cursor: pointer;
+                pointer-events: auto;
+            `;
+            
+            // 데이터 속성도 업데이트
+            if (isVisible) {
+                area.setAttribute('data-visible', 'true');
+            } else {
+                area.removeAttribute('data-visible');
+            }
         });
         
-        // 디버깅용 정보 표시
-        console.log(`${areas.length}개 버튼 영역 ${isVisible ? '표시됨' : '숨김'}`);
+        console.log(`${areas.length}개 버튼 영역 ${isVisible ? '표시' : '숨김'} 처리 완료`);
     }
     
     // 전역 객체에 함수 노출

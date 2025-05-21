@@ -165,6 +165,10 @@ function enableDevMode() {
             border: 2px dashed yellow;
             background: rgba(255, 255, 0, 0.2);
             pointer-events: none;
+            z-index: 9000;
+            box-sizing: border-box;
+            min-width: 5px;
+            min-height: 5px;
         }
         .area-handle {
             position: absolute;
@@ -263,6 +267,13 @@ function enableDevMode() {
             // 선택 모드가 비활성화된 상태에서 클릭: 선택 시작 준비
             coordsDisplay.innerHTML = '이미지에서 드래그하여 영역을 선택하세요';
             this.textContent = '선택 취소';
+            
+            // 기존 선택 박스가 있으면 제거
+            if (selectionBox) {
+                selectionBox.remove();
+                selectionBox = null;
+            }
+            
             currentScreen.addEventListener('mousedown', startSelection);
         }
         
@@ -328,6 +339,17 @@ function enableDevMode() {
                 throw new Error('생성된 코드가 필수 속성을 포함하고 있지 않습니다.');
             }
             
+            // 값 유효성 확인 및 보정
+            if (isNaN(codeObj.width) || codeObj.width <= 0) {
+                console.warn('유효하지 않은 너비:', codeObj.width);
+                codeObj.width = 50; // 더 작은 기본값 사용
+            }
+            
+            if (isNaN(codeObj.height) || codeObj.height <= 0) {
+                console.warn('유효하지 않은 높이:', codeObj.height);
+                codeObj.height = 50; // 더 작은 기본값 사용
+            }
+            
             console.log('저장할 버튼 데이터:', codeObj);
             
             // 버튼 설정 객체 생성
@@ -340,6 +362,9 @@ function enableDevMode() {
                 targetScreen: codeObj.action ? Number(codeObj.action.toString().match(/goToScreen\((\d+)\)/)[1]) : currentScreenNum + 1,
                 useLeftTopPosition: true
             };
+            
+            // 값 로깅
+            console.log('최종 버튼 설정 데이터 확인:', buttonConfig);
             
             // screenMappings에 추가
             if (!window.screenMappings[currentScreenNum]) {
@@ -385,7 +410,7 @@ function enableDevMode() {
             }
             
             console.log(`JSON 설정이 다운로드되었습니다. (${fileName})`);
-            alert('버튼이 추가되었습니다! 설정 파일이 다운로드됩니다.');
+            alert(`버튼이 추가되었습니다! 크기: ${buttonConfig.width}×${buttonConfig.height}px\n설정 파일이 다운로드됩니다.`);
             
         } catch (err) {
             console.error('JSON 생성 오류:', err);
@@ -403,32 +428,23 @@ function enableDevMode() {
             const clickXInImage = e.clientX - imgRect.left;
             const clickYInImage = e.clientY - imgRect.top;
             
-            // 원본 이미지의 크기
-            const originalWidth = window.config ? window.config.imageWidth : 2498;
-            const originalHeight = window.config ? window.config.imageHeight : 1440;
+            // 사용자 지정 버튼 크기 (최소 크기 보장)
+            const userWidth = 50;  // 사용자 정의 가능 - 더 작은 기본 크기
+            const userHeight = 50; // 사용자 정의 가능 - 더 작은 기본 크기
             
-            // 이미지 비율 계산
-            const widthRatio = originalWidth / imgRect.width;
-            const heightRatio = originalHeight / imgRect.height;
-            
-            // 원본 이미지에서의 좌표 계산
-            const originalX = Math.round(clickXInImage * widthRatio);
-            const originalY = Math.round(clickYInImage * heightRatio);
-            
-            // 좌표 표시
+            // 좌표 표시 (픽셀값 그대로 사용)
             coordsDisplay.innerHTML = `
                 클릭 위치:<br>
                 화면 기준: ${Math.round(e.clientX)}, ${Math.round(e.clientY)}<br>
                 이미지 내: ${Math.round(clickXInImage)}, ${Math.round(clickYInImage)}<br>
-                원본 좌표: ${originalX}, ${originalY}
+                생성될 버튼 크기: ${userWidth}×${userHeight}
             `;
             
             console.log('클릭 - 화면:', e.clientX, e.clientY);
-            console.log('클릭 - 이미지 내:', clickXInImage, clickYInImage);
-            console.log('클릭 - 원본 좌표:', originalX, originalY);
+            console.log('클릭 - 이미지 내(실제 픽셀값):', clickXInImage, clickYInImage);
             
-            // 원본 좌표 기준으로 코드 생성
-            generatedCode.value = generateCode(originalX, originalY, 75, 57);
+            // 픽셀 좌표 그대로 사용하여 코드 생성 (사용자 지정 크기)
+            generatedCode.value = generateCode(Math.round(clickXInImage), Math.round(clickYInImage), userWidth, userHeight);
         }
     });
     
@@ -436,226 +452,228 @@ function enableDevMode() {
     function startSelection(e) {
         e.preventDefault();
         
-        // 선택 모드 활성화
-        isSelecting = true;
-        
-        // 이미지의 실제 크기와 위치 가져오기
-        const imgRect = currentScreen.getBoundingClientRect();
-        
-        // 시작 좌표 (화면 기준)
-        startX = e.clientX;
-        startY = e.clientY;
-        
-        // 원본 이미지의 크기 (config에서 가져온 값)
-        const originalWidth = window.config ? window.config.imageWidth : 2498;
-        const originalHeight = window.config ? window.config.imageHeight : 1440;
-        
-        // 이미지 내 클릭 위치 (CSS 픽셀)
-        const clickXWithinImage = e.clientX - imgRect.left;
-        const clickYWithinImage = e.clientY - imgRect.top;
-        
-        // 이미지 비율 계산
-        const widthRatio = originalWidth / imgRect.width;
-        const heightRatio = originalHeight / imgRect.height;
-        
-        // 선택 영역의 상대적 좌표 계산 (원본 이미지 내에서)
-        areaStartX = Math.round(clickXWithinImage * widthRatio);
-        areaStartY = Math.round(clickYWithinImage * heightRatio);
-        
-        console.log('이미지 크기 및 위치:', imgRect.width, imgRect.height, imgRect.left, imgRect.top);
-        console.log('선택 시작 - 이미지 내 위치:', clickXWithinImage, clickYWithinImage);
-        console.log('선택 시작 - 원본 좌표:', areaStartX, areaStartY);
-        console.log('비율:', widthRatio, heightRatio);
-        
-        // 선택 박스 생성
-        selectionBox = document.createElement('div');
-        selectionBox.className = 'selection-box';
-        buttonOverlay.appendChild(selectionBox);
-        
-        // 마우스 이벤트 연결
-        document.addEventListener('mousemove', updateSelection);
-        document.addEventListener('mouseup', endSelection);
+        try {
+            // 선택 모드 활성화
+            isSelecting = true;
+            
+            // 이미지의 실제 크기와 위치 가져오기
+            const imgRect = currentScreen.getBoundingClientRect();
+            
+            // 시작 좌표 (화면 기준)
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            // 이미지 내 클릭 위치 (CSS 픽셀)
+            const clickXWithinImage = e.clientX - imgRect.left;
+            const clickYWithinImage = e.clientY - imgRect.top;
+            
+            // 시작 위치 저장 (픽셀 값 그대로 사용)
+            areaStartX = Math.round(clickXWithinImage);
+            areaStartY = Math.round(clickYWithinImage);
+            
+            console.log('이미지 크기 및 위치:', imgRect.width, imgRect.height, imgRect.left, imgRect.top);
+            console.log('선택 시작 - 이미지 내 위치(실제 픽셀값):', areaStartX, areaStartY);
+            
+            // 기존 선택 박스가 있으면 제거
+            if (selectionBox) {
+                selectionBox.remove();
+            }
+            
+            // 선택 박스 생성
+            selectionBox = document.createElement('div');
+            selectionBox.className = 'selection-box';
+            buttonOverlay.appendChild(selectionBox);
+            
+            // 마우스 이벤트 연결
+            document.addEventListener('mousemove', updateSelection);
+            document.addEventListener('mouseup', endSelection);
+            
+            // 초기 선택 박스 크기 설정 (1x1 픽셀)
+            selectionBox.style.left = `${areaStartX}px`;
+            selectionBox.style.top = `${areaStartY}px`;
+            selectionBox.style.width = '1px';
+            selectionBox.style.height = '1px';
+            
+            // 초기 데이터 속성 설정
+            selectionBox.dataset.finalX = areaStartX;
+            selectionBox.dataset.finalY = areaStartY;
+            selectionBox.dataset.finalWidth = 1;
+            selectionBox.dataset.finalHeight = 1;
+        } catch (err) {
+            console.error('startSelection 오류:', err);
+            endSelection(); // 오류 발생 시 선택 종료
+        }
     }
     
     // 영역 선택 업데이트
     function updateSelection(e) {
         if (!isSelecting) return;
         
-        // 이미지의 실제 크기와 위치 가져오기
-        const imgRect = currentScreen.getBoundingClientRect();
-        
-        // 이미지가 로드되지 않았거나 크기가 없는 경우 처리
-        if (!imgRect.width || !imgRect.height) {
-            console.error('이미지 크기를 가져올 수 없습니다');
-            return;
+        try {
+            // 이미지의 실제 크기와 위치 가져오기
+            const imgRect = currentScreen.getBoundingClientRect();
+            
+            // 이미지가 로드되지 않았거나 크기가 없는 경우 처리
+            if (!imgRect.width || !imgRect.height) {
+                console.error('이미지 크기를 가져올 수 없습니다');
+                return;
+            }
+            
+            const currentX = e.clientX;
+            const currentY = e.clientY;
+            
+            // 이미지 영역 내로 좌표 제한
+            const clampedStartX = Math.max(imgRect.left, Math.min(imgRect.right, startX));
+            const clampedStartY = Math.max(imgRect.top, Math.min(imgRect.bottom, startY));
+            const clampedCurrentX = Math.max(imgRect.left, Math.min(imgRect.right, currentX));
+            const clampedCurrentY = Math.max(imgRect.top, Math.min(imgRect.bottom, currentY));
+            
+            // 이미지 내 상대 좌표 계산
+            const startXInImage = clampedStartX - imgRect.left;
+            const startYInImage = clampedStartY - imgRect.top;
+            const currentXInImage = clampedCurrentX - imgRect.left;
+            const currentYInImage = clampedCurrentY - imgRect.top;
+            
+            // 왼쪽 상단, 오른쪽 하단 좌표 결정 (방향 무관)
+            const boxLeft = Math.min(startXInImage, currentXInImage);
+            const boxTop = Math.min(startYInImage, currentYInImage);
+            const boxRight = Math.max(startXInImage, currentXInImage);
+            const boxBottom = Math.max(startYInImage, currentYInImage);
+            
+            // 크기 계산
+            const minCssSize = 5;
+            const width = Math.max(minCssSize, boxRight - boxLeft);
+            const height = Math.max(minCssSize, boxBottom - boxTop);
+            
+            // 선택 박스가 있는지 확인
+            if (selectionBox) {
+                // 선택 박스 업데이트 (버튼 오버레이 기준)
+                selectionBox.style.left = `${boxLeft}px`;
+                selectionBox.style.top = `${boxTop}px`;
+                selectionBox.style.width = `${width}px`;
+                selectionBox.style.height = `${height}px`;
+                
+                // 정수로 변환
+                const finalX = Math.round(boxLeft);
+                const finalY = Math.round(boxTop);
+                const finalWidth = Math.round(width);
+                const finalHeight = Math.round(height);
+                
+                // 최종 좌표를 선택 박스에 데이터 속성으로 저장
+                selectionBox.dataset.finalX = finalX;
+                selectionBox.dataset.finalY = finalY;
+                selectionBox.dataset.finalWidth = finalWidth;
+                selectionBox.dataset.finalHeight = finalHeight;
+                
+                // 디버깅 정보
+                console.log('영역 선택 중 - 이미지 내 위치(실제 픽셀값):', finalX, finalY, finalWidth, finalHeight);
+                
+                // 좌표 정보 업데이트
+                coordsDisplay.innerHTML = `
+                    선택 영역 (실제 픽셀값):<br>
+                    좌상단: x=${finalX}, y=${finalY}<br>
+                    크기: width=${finalWidth}, height=${finalHeight}
+                `;
+                
+                // 코드 생성
+                generatedCode.value = generateCode(finalX, finalY, finalWidth, finalHeight);
+            } else {
+                console.error('선택 박스가 없습니다');
+            }
+        } catch (err) {
+            console.error('updateSelection 오류:', err);
         }
-        
-        const currentX = e.clientX;
-        const currentY = e.clientY;
-        
-        // 원본 이미지의 크기
-        const originalWidth = window.config ? window.config.imageWidth : 2498;
-        const originalHeight = window.config ? window.config.imageHeight : 1440;
-        
-        // 이미지 비율 계산
-        const widthRatio = originalWidth / imgRect.width;
-        const heightRatio = originalHeight / imgRect.height;
-        
-        // 이미지 영역 내로 좌표 제한
-        const clampedStartX = Math.max(imgRect.left, Math.min(imgRect.right, startX));
-        const clampedStartY = Math.max(imgRect.top, Math.min(imgRect.bottom, startY));
-        const clampedCurrentX = Math.max(imgRect.left, Math.min(imgRect.right, currentX));
-        const clampedCurrentY = Math.max(imgRect.top, Math.min(imgRect.bottom, currentY));
-        
-        // 선택 박스 위치 계산 (이미지 기준)
-        const left = Math.min(clampedStartX, clampedCurrentX);
-        const top = Math.min(clampedStartY, clampedCurrentY);
-        const right = Math.max(clampedStartX, clampedCurrentX);
-        const bottom = Math.max(clampedStartY, clampedCurrentY);
-        
-        // 최소 크기 보장 (CSS 픽셀로 최소 5x5)
-        const minCssSize = 5;
-        let width = Math.max(minCssSize, right - left);
-        let height = Math.max(minCssSize, bottom - top);
-        
-        // 이미지 내 좌표로 변환
-        const boxLeftInImage = left - imgRect.left;
-        const boxTopInImage = top - imgRect.top;
-        
-        // 선택 박스 업데이트 (버튼 오버레이 기준)
-        selectionBox.style.left = `${boxLeftInImage}px`;
-        selectionBox.style.top = `${boxTopInImage}px`;
-        selectionBox.style.width = `${width}px`;
-        selectionBox.style.height = `${height}px`;
-        
-        // 원본 이미지 좌표로 변환
-        const relLeft = Math.round(boxLeftInImage * widthRatio);
-        const relTop = Math.round(boxTopInImage * heightRatio);
-        areaWidth = Math.round(width * widthRatio);
-        areaHeight = Math.round(height * heightRatio);
-        
-        // 최소 크기 보장 (원본 좌표로 최소 10x10)
-        const minOriginalSize = 10;
-        areaWidth = Math.max(minOriginalSize, areaWidth);
-        areaHeight = Math.max(minOriginalSize, areaHeight);
-        
-        // 데이터 유효성 검사
-        if (isNaN(relLeft) || isNaN(relTop) || isNaN(areaWidth) || isNaN(areaHeight)) {
-            console.error('좌표 계산 오류:', boxLeftInImage, boxTopInImage, width, height, widthRatio, heightRatio);
-        }
-        
-        // 디버깅 정보
-        console.log('영역 선택 중 - 이미지 내 위치:', boxLeftInImage, boxTopInImage, width, height);
-        console.log('영역 선택 중 - 원본 좌표:', relLeft, relTop, areaWidth, areaHeight);
-        
-        // 유효한 값인지 확인 (0 이하 값 처리)
-        const validLeft = !isNaN(relLeft) ? relLeft : 0;
-        const validTop = !isNaN(relTop) ? relTop : 0;
-        const validWidth = (!isNaN(areaWidth) && areaWidth > 0) ? areaWidth : minOriginalSize;
-        const validHeight = (!isNaN(areaHeight) && areaHeight > 0) ? areaHeight : minOriginalSize;
-        
-        // 최종 좌표를 선택 박스에 데이터 속성으로 저장
-        selectionBox.dataset.finalX = validLeft;
-        selectionBox.dataset.finalY = validTop;
-        selectionBox.dataset.finalWidth = validWidth;
-        selectionBox.dataset.finalHeight = validHeight;
-        
-        // 좌표 정보 업데이트
-        coordsDisplay.innerHTML = `
-            선택 영역 (원본 좌표):<br>
-            좌상단: x=${validLeft}, y=${validTop}<br>
-            크기: width=${validWidth}, height=${validHeight}
-        `;
-        
-        // 코드 생성
-        generatedCode.value = generateCode(validLeft, validTop, validWidth, validHeight);
     }
     
     // 영역 선택 완료
     function endSelection() {
-        if (!isSelecting) return;
+        console.log('endSelection 함수 호출됨, isSelecting:', isSelecting);
         
-        isSelecting = false;
-        
-        // 이벤트 리스너 제거
+        // 이벤트 리스너 제거 (항상 제거하여 중복 호출 방지)
         document.removeEventListener('mousemove', updateSelection);
         document.removeEventListener('mouseup', endSelection);
         
-        // 최종 선택 영역 좌표 가져오기 (데이터 속성에서)
+        if (!isSelecting) return;
+        
+        // 선택 모드 해제
+        isSelecting = false;
+        
+        // 선택 버튼 텍스트 복원
+        if (createBtn) {
+            createBtn.textContent = '영역 생성';
+        }
+        
+        // 최종 선택 영역 좌표 처리
         if (selectionBox) {
-            // 마지막으로 업데이트된 좌표값 가져오기 (직접 스타일에서 계산)
-            const boxRect = selectionBox.getBoundingClientRect();
-            const imgRect = currentScreen.getBoundingClientRect();
-            
-            // 원본 이미지 크기
-            const originalWidth = window.config ? window.config.imageWidth : 2498;
-            const originalHeight = window.config ? window.config.imageHeight : 1440;
-            
-            // 비율 계산
-            const widthRatio = originalWidth / imgRect.width;
-            const heightRatio = originalHeight / imgRect.height;
-            
-            // 영역 정보 (CSS 픽셀)
-            const boxLeft = boxRect.left - imgRect.left;
-            const boxTop = boxRect.top - imgRect.top;
-            const boxWidth = boxRect.width;
-            const boxHeight = boxRect.height;
-            
-            console.log('선택 상자 현재 영역 (CSS 픽셀):', {boxLeft, boxTop, boxWidth, boxHeight});
-            
-            // 원본 이미지 기준 좌표 계산
-            let finalX = Math.round(boxLeft * widthRatio);
-            let finalY = Math.round(boxTop * heightRatio);
-            let finalWidth = Math.round(boxWidth * widthRatio);
-            let finalHeight = Math.round(boxHeight * heightRatio);
-            
-            console.log('선택 상자 계산된 좌표:', {finalX, finalY, finalWidth, finalHeight});
-            
-            // 데이터 속성 값도 확인 (가장 정확한 값)
-            const dataX = parseInt(selectionBox.dataset.finalX);
-            const dataY = parseInt(selectionBox.dataset.finalY);
-            const dataWidth = parseInt(selectionBox.dataset.finalWidth);
-            const dataHeight = parseInt(selectionBox.dataset.finalHeight);
-            
-            console.log('데이터 속성 저장 좌표:', {dataX, dataY, dataWidth, dataHeight});
-            
-            // 둘 중 유효한 값 선택 (데이터 속성 값 우선)
-            if (!isNaN(dataX) && !isNaN(dataY) && !isNaN(dataWidth) && !isNaN(dataHeight) && 
-                dataWidth > 0 && dataHeight > 0) {
-                finalX = dataX;
-                finalY = dataY;
-                finalWidth = dataWidth;
-                finalHeight = dataHeight;
-                console.log('데이터 속성 좌표 사용');
-            } else {
-                console.log('계산된 좌표 사용 (데이터 속성 없음)');
+            try {
+                // 데이터 속성 값 확인
+                let dataX = parseInt(selectionBox.dataset.finalX);
+                let dataY = parseInt(selectionBox.dataset.finalY);
+                let dataWidth = parseInt(selectionBox.dataset.finalWidth);
+                let dataHeight = parseInt(selectionBox.dataset.finalHeight);
+                
+                console.log('데이터 속성 저장 좌표(실제 픽셀값):', {dataX, dataY, dataWidth, dataHeight});
+                
+                // NaN 체크 및 기본값 적용
+                if (isNaN(dataX)) dataX = 0;
+                if (isNaN(dataY)) dataY = 0;
+                if (isNaN(dataWidth) || dataWidth <= 0) dataWidth = 50; // 더 작은 기본값
+                if (isNaN(dataHeight) || dataHeight <= 0) dataHeight = 50; // 더 작은 기본값
+                
+                // 음수 너비/높이 처리 (방향이 반대인 경우)
+                if (dataWidth < 0) {
+                    dataX += dataWidth;
+                    dataWidth = Math.abs(dataWidth);
+                }
+                if (dataHeight < 0) {
+                    dataY += dataHeight;
+                    dataHeight = Math.abs(dataHeight);
+                }
+                
+                // 선택 영역 시각화 (스타일만 변경)
+                const originalStyle = selectionBox.style.cssText;
+                selectionBox.style.cssText = originalStyle + '; background-color: rgba(0, 255, 0, 0.3); border: 2px solid lime;';
+                
+                // 최종 좌표를 다시 데이터 속성에 저장
+                selectionBox.dataset.finalX = dataX;
+                selectionBox.dataset.finalY = dataY;
+                selectionBox.dataset.finalWidth = dataWidth;
+                selectionBox.dataset.finalHeight = dataHeight;
+                
+                // 좌표 정보 업데이트
+                coordsDisplay.innerHTML = `
+                    선택 영역 (실제 픽셀값):<br>
+                    좌상단: x=${dataX}, y=${dataY}<br>
+                    크기: width=${dataWidth}, height=${dataHeight}
+                    <br><strong>영역 선택 완료!</strong>
+                `;
+                
+                // 최종 코드 생성
+                generatedCode.value = generateCode(dataX, dataY, dataWidth, dataHeight);
+                
+                console.log('영역 선택 완료 - 최종 좌표(실제 픽셀값):', {dataX, dataY, dataWidth, dataHeight});
+            } catch (err) {
+                console.error('영역 선택 완료 처리 중 오류:', err);
+                
+                // 오류 발생해도 기본 정보 표시
+                coordsDisplay.innerHTML = `
+                    <span style="color: yellow;">좌표 계산 중 오류가 발생했습니다.</span><br>
+                    <strong>영역 선택 완료!</strong>
+                `;
+                
+                // 기본 코드 생성
+                generatedCode.value = generateCode(0, 0, 50, 50);
             }
-            
-            // 선택 영역 시각화 (스타일만 변경하고 위치/크기는 유지)
-            const originalStyle = selectionBox.style.cssText;
-            selectionBox.style.cssText = originalStyle + '; background-color: rgba(0, 255, 0, 0.3); border: 2px solid lime;';
-            
-            // 데이터 속성 업데이트 (확실하게 최종 값 저장)
-            selectionBox.dataset.finalX = finalX;
-            selectionBox.dataset.finalY = finalY;
-            selectionBox.dataset.finalWidth = finalWidth;
-            selectionBox.dataset.finalHeight = finalHeight;
-            
-            // 좌표 정보 업데이트 (스타일 변경 후 정확한 값 표시를 위해)
-            coordsDisplay.innerHTML = `
-                선택 영역 (원본 좌표):<br>
-                좌상단: x=${finalX}, y=${finalY}<br>
-                크기: width=${finalWidth}, height=${finalHeight}
-                <br><strong>영역 선택 완료!</strong>
-            `;
-            
-            // 최종 코드 생성
-            generatedCode.value = generateCode(finalX, finalY, finalWidth, finalHeight);
-            
-            console.log('영역 선택 완료 - 최종 좌표:', {finalX, finalY, finalWidth, finalHeight});
         } else {
             console.log('영역 선택 완료 (선택 박스 없음)');
+            coordsDisplay.innerHTML = `<span style="color: yellow;">선택 박스를 찾을 수 없습니다.</span><br><strong>영역 선택 완료!</strong>`;
+            
+            // 기본 코드 생성
+            generatedCode.value = generateCode(0, 0, 50, 50);
         }
+        
+        // 영역 생성 버튼의 이벤트 리스너 갱신
+        currentScreen.removeEventListener('mousedown', startSelection);
     }
     
     // 코드 생성 함수
@@ -666,11 +684,11 @@ function enableDevMode() {
         // 값 유효성 검사 - 0이나 정상값은 그대로 사용하고 undefined/NaN만 기본값으로 대체
         if (x === undefined || isNaN(x)) x = 0;
         if (y === undefined || isNaN(y)) y = 0;
-        if (width === undefined || isNaN(width) || width <= 0) width = 75;
-        if (height === undefined || isNaN(height) || height <= 0) height = 57;
+        if (width === undefined || isNaN(width) || width <= 0) width = 50; // 더 작은 기본값
+        if (height === undefined || isNaN(height) || height <= 0) height = 50; // 더 작은 기본값
         
-        // 로그로 확인
-        console.log('코드 생성 함수에 전달된 값:', {x, y, width, height});
+        // 로그로 확인 (실제 픽셀값 그대로 사용)
+        console.log('코드 생성 함수에 전달된 값(실제 픽셀값):', {x, y, width, height});
         
         return `{
     id: '${btnId}',
@@ -739,31 +757,23 @@ function enableDevMode() {
                 width = parseInt(selectionBox.dataset.finalWidth);
                 height = parseInt(selectionBox.dataset.finalHeight);
                 
-                console.log('공통 버튼 생성: 데이터 속성 사용', x, y, width, height);
+                console.log('공통 버튼 생성: 데이터 속성 사용(실제 픽셀값)', x, y, width, height);
             } else {
-                // 이미지의 실제 크기와 위치 가져오기
-                const imgRect = currentScreen.getBoundingClientRect();
-                
-                // 원본 이미지의 크기
-                const originalWidth = window.config ? window.config.imageWidth : 2498;
-                const originalHeight = window.config ? window.config.imageHeight : 1440;
-                
-                // 이미지 비율 계산
-                const widthRatio = originalWidth / imgRect.width;
-                const heightRatio = originalHeight / imgRect.height;
-                
                 // 선택 박스 위치 및 크기
                 const selRect = selectionBox.getBoundingClientRect();
+                const imgRect = currentScreen.getBoundingClientRect();
+                
+                // 이미지 내 좌표로 변환
                 const selLeftInImage = selRect.left - imgRect.left;
                 const selTopInImage = selRect.top - imgRect.top;
                 
-                // 원본 이미지 기준 좌표 계산
-                x = Math.round(selLeftInImage * widthRatio);
-                y = Math.round(selTopInImage * heightRatio);
-                width = Math.round(selRect.width * widthRatio);
-                height = Math.round(selRect.height * heightRatio);
+                // 픽셀 값 그대로 사용
+                x = Math.round(selLeftInImage);
+                y = Math.round(selTopInImage);
+                width = Math.round(selRect.width);
+                height = Math.round(selRect.height);
                 
-                console.log('공통 버튼 생성: 계산된 좌표 사용', x, y, width, height);
+                console.log('공통 버튼 생성: 계산된 좌표 사용(실제 픽셀값)', x, y, width, height);
             }
         } else {
             // 기본 위치 및 크기
