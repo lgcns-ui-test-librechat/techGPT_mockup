@@ -1,0 +1,23 @@
+{
+  "imageWidth": 2498,
+  "imageHeight": 1440,
+  "screenshots": [
+    { "id": 1, "path": "screenshot/1.PNG" },
+    { "id": 2, "path": "screenshot/2.PNG" },
+    { "id": 3, "path": "screenshot/3.PNG" },
+    { "id": 4, "path": "screenshot/4.PNG" },
+    { "id": 5, "path": "screenshot/5.PNG" },
+    { "id": 6, "path": "screenshot/6.PNG" },
+    { "id": 7, "path": "screenshot/7.PNG" },
+    { "id": 8, "path": "screenshot/8.PNG" },
+    { "id": 9, "path": "screenshot/9.PNG" },
+    { "id": 10, "path": "screenshot/10.PNG" },
+    { "id": 11, "path": "screenshot/11.PNG" },
+    { "id": 12, "path": "screenshot/12.PNG" },
+    { "id": 13, "path": "screenshot/13.PNG" },
+    { "id": 14, "path": "screenshot/14.PNG" },
+    { "id": 15, "path": "screenshot/15.PNG" },
+    { "id": 16, "path": "screenshot/16.PNG" },
+    { "id": 17, "path": "screenshot/17.PNG" }
+  ]
+} 

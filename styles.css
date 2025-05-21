@@ -1,0 +1,131 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #000;
+}
+
+.app-container {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000;
+}
+
+.screen-container {
+    position: relative;
+    display: block;
+    margin: 0 auto;
+}
+
+.screen-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* 비율 유지하면서 컨테이너에 맞추기 */
+}
+
+.button-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* 버튼 외 영역은 클릭 무시 */
+    z-index: 2;
+}
+
+/* 클릭 영역 스타일 */
+.clickable-area {
+    position: absolute;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    pointer-events: auto; /* 이 요소만 클릭 가능하게 함 */
+    transition: all 0.2s;
+    z-index: 100;
+    box-sizing: border-box; /* 크기 계산에 border와 padding 포함 */
+}
+
+.clickable-area:hover {
+    /* 필요한 경우 호버 시에만 약간의 표시 */
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 개발 모드에서만 버튼 시각화 */
+body.dev-mode .clickable-area {
+    background-color: rgba(255, 0, 0, 0.3) !important;
+    border: 2px dashed red !important;
+    z-index: 1000 !important;
+}
+
+/* 개발자 콘솔 버튼 */
+.dev-console-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 8px 12px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    z-index: 2000;
+}
+
+.screen-indicator {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    padding: 8px 12px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1000;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #eee;
+}
+
+button {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #0069d9;
+}
+
+#screen-indicator {
+    font-size: 14px;
+    color: #555;
+} 
