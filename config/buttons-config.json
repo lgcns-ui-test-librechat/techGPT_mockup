@@ -125,6 +125,24 @@
       "height": 35,
       "targetScreen": 10,
       "useLeftTopPosition": true
+    },
+    "myKnowledge": {
+      "id": "btn-my-knowledge",
+      "x": 90,
+      "y": 230,
+      "width": 150,
+      "height": 40,
+      "targetScreen": 7,
+      "useLeftTopPosition": true
+    },
+    "popularKnowledge": {
+      "id": "btn-popular-knowledge",
+      "x": 240,
+      "y": 230,
+      "width": 150,
+      "height": 40,
+      "targetScreen": 8,
+      "useLeftTopPosition": true
     }
   },
   "screenMappings": {
@@ -170,6 +188,15 @@
         "x": 1150,
         "y": 750,
         "width": 50,
+        "height": 50,
+        "targetScreen": 2,
+        "useLeftTopPosition": true
+      },
+      {
+        "id": "btn-1-8011",
+        "x": 1400,
+        "y": 700,
+        "width": 150,
         "height": 50,
         "targetScreen": 2,
         "useLeftTopPosition": true
@@ -299,6 +326,16 @@
       "buttonId": "searchPeriod",
       "startScreen": 9,
       "endScreen": 13
+    },
+    {
+      "buttonId": "myKnowledge",
+      "startScreen": 6,
+      "endScreen": 8
+    },
+    {
+      "buttonId": "popularKnowledge",
+      "startScreen": 6,
+      "endScreen": 8
     }
   ]
 } 
