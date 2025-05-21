@@ -276,8 +276,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // width, height는 반드시 1보다 커야 함
             // 0 또는 음수일 경우에만 기본값 적용
-            const validWidth = (!isNaN(mapping.width) && mapping.width > 0) ? mapping.width : 75;
-            const validHeight = (!isNaN(mapping.height) && mapping.height > 0) ? mapping.height : 57;
+            const validWidth = (!isNaN(mapping.width) && mapping.width > 0) ? mapping.width : 50;
+            const validHeight = (!isNaN(mapping.height) && mapping.height > 0) ? mapping.height : 50;
             
             // 디버깅 - 기본값이 적용되는지 확인
             if (mapping.width <= 0 || isNaN(mapping.width) || mapping.height <= 0 || isNaN(mapping.height)) {
@@ -304,15 +304,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 절대 위치 설정 (픽셀 단위)
             area.style.cssText = `
-                position: absolute;
-                left: ${left}px;
-                top: ${top}px;
-                width: ${width}px;
-                height: ${height}px;
-                z-index: 100;
-                cursor: pointer;
-                pointer-events: auto;
-                ${isDevMode ? 'background-color: rgba(255, 0, 0, 0.3); border: 2px dashed red;' : 'background-color: transparent; border: none;'}
+                position: absolute !important;
+                left: ${left}px !important;
+                top: ${top}px !important;
+                width: ${width}px !important;
+                height: ${height}px !important;
+                z-index: 100 !important;
+                cursor: pointer !important;
+                pointer-events: auto !important;
+                ${isDevMode ? 'background-color: rgba(255, 0, 0, 0.3) !important; border: 2px dashed red !important;' : 'background-color: transparent; border: none;'}
             `;
             
             // 디버깅용 정보 저장 (원본 좌표 유지)
@@ -356,16 +356,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 인라인 스타일 한 번에 적용 (reflow 최소화)
         element.style.cssText = `
-            position: absolute;
-            left: ${left};
-            top: ${top};
-            width: ${width};
-            height: ${height};
-            background-color: ${isVisible ? 'rgba(255, 0, 0, 0.3)' : 'transparent'};
-            border: ${isVisible ? '2px dashed red' : 'none'};
-            z-index: ${isVisible ? '1000' : '100'};
-            cursor: pointer;
-            pointer-events: auto;
+            position: absolute !important;
+            left: ${left} !important;
+            top: ${top} !important;
+            width: ${width} !important;
+            height: ${height} !important;
+            background-color: ${isVisible ? 'rgba(255, 0, 0, 0.3) !important' : 'transparent'};
+            border: ${isVisible ? '2px dashed red !important' : 'none'};
+            z-index: ${isVisible ? '1000 !important' : '100'};
+            cursor: pointer !important;
+            pointer-events: auto !important;
         `;
     }
     
@@ -385,16 +385,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // CSS 클래스 전환 대신 인라인 스타일 직접 적용 (더 빠름)
             area.style.cssText = `
-                position: absolute;
-                left: ${left};
-                top: ${top};
-                width: ${width};
-                height: ${height};
+                position: absolute !important;
+                left: ${left} !important;
+                top: ${top} !important;
+                width: ${width} !important;
+                height: ${height} !important;
                 background-color: ${isVisible ? 'rgba(255, 0, 0, 0.3) !important' : 'transparent'};
                 border: ${isVisible ? '2px dashed red !important' : 'none'};
-                z-index: ${isVisible ? '1000' : '100'};
-                cursor: pointer;
-                pointer-events: auto;
+                z-index: ${isVisible ? '1000 !important' : '100'};
+                cursor: pointer !important;
+                pointer-events: auto !important;
             `;
             
             // 데이터 속성도 업데이트
