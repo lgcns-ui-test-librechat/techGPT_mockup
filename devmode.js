@@ -513,8 +513,10 @@ function enableDevMode() {
         const right = Math.max(clampedStartX, clampedCurrentX);
         const bottom = Math.max(clampedStartY, clampedCurrentY);
         
-        const width = right - left;
-        const height = bottom - top;
+        // 최소 크기 보장 (CSS 픽셀로 최소 5x5)
+        const minCssSize = 5;
+        let width = Math.max(minCssSize, right - left);
+        let height = Math.max(minCssSize, bottom - top);
         
         // 이미지 내 좌표로 변환
         const boxLeftInImage = left - imgRect.left;
@@ -532,6 +534,11 @@ function enableDevMode() {
         areaWidth = Math.round(width * widthRatio);
         areaHeight = Math.round(height * heightRatio);
         
+        // 최소 크기 보장 (원본 좌표로 최소 10x10)
+        const minOriginalSize = 10;
+        areaWidth = Math.max(minOriginalSize, areaWidth);
+        areaHeight = Math.max(minOriginalSize, areaHeight);
+        
         // 데이터 유효성 검사
         if (isNaN(relLeft) || isNaN(relTop) || isNaN(areaWidth) || isNaN(areaHeight)) {
             console.error('좌표 계산 오류:', boxLeftInImage, boxTopInImage, width, height, widthRatio, heightRatio);
@@ -541,11 +548,11 @@ function enableDevMode() {
         console.log('영역 선택 중 - 이미지 내 위치:', boxLeftInImage, boxTopInImage, width, height);
         console.log('영역 선택 중 - 원본 좌표:', relLeft, relTop, areaWidth, areaHeight);
         
-        // 유효한 값인지 확인
+        // 유효한 값인지 확인 (0 이하 값 처리)
         const validLeft = !isNaN(relLeft) ? relLeft : 0;
         const validTop = !isNaN(relTop) ? relTop : 0;
-        const validWidth = !isNaN(areaWidth) && areaWidth > 0 ? areaWidth : 75;
-        const validHeight = !isNaN(areaHeight) && areaHeight > 0 ? areaHeight : 57;
+        const validWidth = (!isNaN(areaWidth) && areaWidth > 0) ? areaWidth : minOriginalSize;
+        const validHeight = (!isNaN(areaHeight) && areaHeight > 0) ? areaHeight : minOriginalSize;
         
         // 최종 좌표를 선택 박스에 데이터 속성으로 저장
         selectionBox.dataset.finalX = validLeft;
@@ -576,14 +583,63 @@ function enableDevMode() {
         
         // 최종 선택 영역 좌표 가져오기 (데이터 속성에서)
         if (selectionBox) {
-            const finalX = parseInt(selectionBox.dataset.finalX || 0);
-            const finalY = parseInt(selectionBox.dataset.finalY || 0);
-            const finalWidth = parseInt(selectionBox.dataset.finalWidth || 75);
-            const finalHeight = parseInt(selectionBox.dataset.finalHeight || 57);
+            // 마지막으로 업데이트된 좌표값 가져오기 (직접 스타일에서 계산)
+            const boxRect = selectionBox.getBoundingClientRect();
+            const imgRect = currentScreen.getBoundingClientRect();
+            
+            // 원본 이미지 크기
+            const originalWidth = window.config ? window.config.imageWidth : 2498;
+            const originalHeight = window.config ? window.config.imageHeight : 1440;
+            
+            // 비율 계산
+            const widthRatio = originalWidth / imgRect.width;
+            const heightRatio = originalHeight / imgRect.height;
+            
+            // 영역 정보 (CSS 픽셀)
+            const boxLeft = boxRect.left - imgRect.left;
+            const boxTop = boxRect.top - imgRect.top;
+            const boxWidth = boxRect.width;
+            const boxHeight = boxRect.height;
+            
+            console.log('선택 상자 현재 영역 (CSS 픽셀):', {boxLeft, boxTop, boxWidth, boxHeight});
+            
+            // 원본 이미지 기준 좌표 계산
+            let finalX = Math.round(boxLeft * widthRatio);
+            let finalY = Math.round(boxTop * heightRatio);
+            let finalWidth = Math.round(boxWidth * widthRatio);
+            let finalHeight = Math.round(boxHeight * heightRatio);
+            
+            console.log('선택 상자 계산된 좌표:', {finalX, finalY, finalWidth, finalHeight});
+            
+            // 데이터 속성 값도 확인 (가장 정확한 값)
+            const dataX = parseInt(selectionBox.dataset.finalX);
+            const dataY = parseInt(selectionBox.dataset.finalY);
+            const dataWidth = parseInt(selectionBox.dataset.finalWidth);
+            const dataHeight = parseInt(selectionBox.dataset.finalHeight);
+            
+            console.log('데이터 속성 저장 좌표:', {dataX, dataY, dataWidth, dataHeight});
+            
+            // 둘 중 유효한 값 선택 (데이터 속성 값 우선)
+            if (!isNaN(dataX) && !isNaN(dataY) && !isNaN(dataWidth) && !isNaN(dataHeight) && 
+                dataWidth > 0 && dataHeight > 0) {
+                finalX = dataX;
+                finalY = dataY;
+                finalWidth = dataWidth;
+                finalHeight = dataHeight;
+                console.log('데이터 속성 좌표 사용');
+            } else {
+                console.log('계산된 좌표 사용 (데이터 속성 없음)');
+            }
             
             // 선택 영역 시각화 (스타일만 변경하고 위치/크기는 유지)
             const originalStyle = selectionBox.style.cssText;
             selectionBox.style.cssText = originalStyle + '; background-color: rgba(0, 255, 0, 0.3); border: 2px solid lime;';
+            
+            // 데이터 속성 업데이트 (확실하게 최종 값 저장)
+            selectionBox.dataset.finalX = finalX;
+            selectionBox.dataset.finalY = finalY;
+            selectionBox.dataset.finalWidth = finalWidth;
+            selectionBox.dataset.finalHeight = finalHeight;
             
             // 좌표 정보 업데이트 (스타일 변경 후 정확한 값 표시를 위해)
             coordsDisplay.innerHTML = `
@@ -596,7 +652,7 @@ function enableDevMode() {
             // 최종 코드 생성
             generatedCode.value = generateCode(finalX, finalY, finalWidth, finalHeight);
             
-            console.log('영역 선택 완료:', finalX, finalY, finalWidth, finalHeight);
+            console.log('영역 선택 완료 - 최종 좌표:', {finalX, finalY, finalWidth, finalHeight});
         } else {
             console.log('영역 선택 완료 (선택 박스 없음)');
         }
@@ -607,11 +663,14 @@ function enableDevMode() {
         const nextScreen = currentScreenNum + 1;
         const btnId = `btn-${currentScreenNum}-${Date.now().toString().slice(-4)}`;
         
-        // NaN 체크 및 기본값 설정
-        x = isNaN(x) ? 0 : x;
-        y = isNaN(y) ? 0 : y;
-        width = isNaN(width) ? 75 : width;
-        height = isNaN(height) ? 57 : height;
+        // 값 유효성 검사 - 0이나 정상값은 그대로 사용하고 undefined/NaN만 기본값으로 대체
+        if (x === undefined || isNaN(x)) x = 0;
+        if (y === undefined || isNaN(y)) y = 0;
+        if (width === undefined || isNaN(width) || width <= 0) width = 75;
+        if (height === undefined || isNaN(height) || height <= 0) height = 57;
+        
+        // 로그로 확인
+        console.log('코드 생성 함수에 전달된 값:', {x, y, width, height});
         
         return `{
     id: '${btnId}',
