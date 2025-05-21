@@ -1,34 +1,39 @@
-name: Deploy to GitHub Pages
+# .github/workflows/deploy.yml
+name: Deploy to GitHub Pages   # 워크플로우 이름
 
 on:
   push:
-    branches: [ "main" ]
-  workflow_dispatch:
+    branches: [ "main" ]        # main 브랜치로 푸시될 때마다 실행
+  workflow_dispatch:           # 수동 실행도 허용
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: read               # 리포지토리 콘텐츠 읽기 권한
+  pages: write                 # GitHub Pages 배포 권한
+  id-token: write              # OIDC 토큰 발급 권한 (configure-pages에서 필요)
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: true
+  group: "pages"               # 같은 그룹의 중복 실행 방지
+  cancel-in-progress: true     # 진행 중인 이전 실행은 취소
 
 jobs:
-  deploy:
+  deploy:                       # job 이름 (임의 지정)
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+      name: github-pages        # GitHub Pages 환경 이름
+      url: ${{ steps.deployment.outputs.page_url }}  # 배포된 페이지 URL 출력
+    runs-on: ubuntu-latest      # 실행 환경
+
     steps:
-      - name: Checkout
+      - name: Checkout 코드 가져오기
         uses: actions/checkout@v3
-      - name: Setup Pages
+
+      - name: Setup Pages 환경 구성
         uses: actions/configure-pages@v3
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: '.'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2 
+          path: '.'  # 프로젝트 루트 디렉토리에서 직접 배포
+
+      - name: Deploy to GitHub Pages 배포
+        id: deployment              # outputs 를 참조하기 위한 id
+        uses: actions/deploy-pages@v2
