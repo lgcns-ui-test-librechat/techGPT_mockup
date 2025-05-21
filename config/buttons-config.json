@@ -35,10 +35,48 @@
       "height": 57,
       "targetScreen": 1,
       "useLeftTopPosition": true
+    },
+    "alert2": {
+      "id": "btn-alert2",
+      "x": 2493,
+      "y": 141,
+      "width": 75,
+      "height": 57,
+      "targetScreen": 5,
+      "useLeftTopPosition": true
+    },
+    "rightArrow": {
+      "id": "btn-right-arrow",
+      "x": 2300,
+      "y": 500,
+      "width": 180,
+      "height": 350,
+      "targetScreen": 15,
+      "useLeftTopPosition": true
+    },
+    "leftArrow": {
+      "id": "btn-left-arrow",
+      "x":80,
+      "y": 500,
+      "width": 180,
+      "height": 350,
+      "targetScreen": 14,
+      "useLeftTopPosition": true
     }
   },
   "screenMappings": {
-    "14":[
+    "4": [
+      {
+        "id": "btn-4-next",
+        "x": 1249,
+        "y": 720,
+        "width": 200,
+        "height": 100,
+        "targetScreen": 5,
+        "useLeftTopPosition": true
+      }
+    ],
+    "14": [
       {
         "id": "btn-14-6669",
         "x": 670,
@@ -70,6 +108,21 @@
       "buttonId": "alert",
       "startScreen": 1,
       "endScreen": 17
+    },
+    {
+      "buttonId": "alert2",
+      "startScreen": 1,
+      "endScreen": 17
+    },
+    {
+      "buttonId": "rightArrow",
+      "startScreen": 4,
+      "endScreen": 14
+    },
+    {
+      "buttonId": "leftArrow",
+      "startScreen": 4,
+      "endScreen": 16
     }
   ]
 } 
