@@ -241,15 +241,21 @@ function enableDevMode() {
     window.addEventListener('resize', updateImageInfo);
     currentScreen.addEventListener('load', updateImageInfo);
     
-    // 영역 생성 버튼 클릭
+    // 영역 생성 버튼 클릭 - 하나의 이벤트 리스너로 통합
     createBtn.addEventListener('click', function() {
         if (isSelecting) {
+            // 선택 모드가 활성화된 상태에서 클릭: 선택 종료
             endSelection();
             this.textContent = '영역 생성';
+            currentScreen.removeEventListener('mousedown', startSelection);
         } else {
+            // 선택 모드가 비활성화된 상태에서 클릭: 선택 시작 준비
             coordsDisplay.innerHTML = '이미지에서 드래그하여 영역을 선택하세요';
             this.textContent = '선택 취소';
+            currentScreen.addEventListener('mousedown', startSelection);
         }
+        
+        console.log('영역 생성 버튼 클릭됨: ' + (isSelecting ? '선택 종료' : '선택 시작'));
     });
     
     // 최소화 버튼
@@ -395,17 +401,6 @@ function enableDevMode() {
         }
     });
     
-    // "영역 생성" 버튼 클릭 시 이미지에 mousedown 이벤트 추가/제거
-    createBtn.addEventListener('click', function() {
-        if (this.textContent === '영역 생성') {
-            this.textContent = '선택 취소';
-            currentScreen.addEventListener('mousedown', startSelection);
-        } else {
-            this.textContent = '영역 생성';
-            currentScreen.removeEventListener('mousedown', startSelection);
-        }
-    });
-    
     // 영역 선택 시작
     function startSelection(e) {
         e.preventDefault();
@@ -537,18 +532,21 @@ function enableDevMode() {
         if (!isSelecting) return;
         
         isSelecting = false;
-        document.getElementById('create-area-btn').textContent = '영역 생성';
         
         // 이벤트 리스너 제거
         document.removeEventListener('mousemove', updateSelection);
         document.removeEventListener('mouseup', endSelection);
         
         // 선택 영역 시각화
-        selectionBox.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
-        selectionBox.style.border = '2px solid lime';
+        if (selectionBox) {
+            selectionBox.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
+            selectionBox.style.border = '2px solid lime';
+        }
         
         // 완료 메시지
         coordsDisplay.innerHTML += '<br><strong>영역 선택 완료!</strong>';
+        
+        console.log('영역 선택 완료');
     }
     
     // 코드 생성 함수
